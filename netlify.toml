@@ -5,4 +5,3 @@
 [[functions]]
   name = "api"
   path = "/api/*"
-  environment = { BOQORE_DB_PATH = "/tmp/boqore-gold.db" }

@@ -7,10 +7,22 @@ import { hashPw } from './lib.js';
 import { seedDemo } from './seed.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// On Netlify Functions the app directory is read-only — use /tmp instead.
-// Can be overridden with BOQORE_DB_PATH.
-const defaultDir = process.env.NETLIFY_FUNCTION ? '/tmp' : path.join(__dirname, 'data');
-const dbPath = process.env.BOQORE_DB_PATH || path.join(defaultDir, 'boqore.db');
+// Pick a writable database location:
+//  1. explicit BOQORE_DB_PATH env var (if set)
+//  2. the local data/ directory (normal server runs)
+//  3. /tmp (serverless runtimes where the app dir is read-only)
+function pickDbPath() {
+  if (process.env.BOQORE_DB_PATH) return process.env.BOQORE_DB_PATH;
+  const local = path.join(__dirname, 'data', 'boqore.db');
+  try {
+    fs.mkdirSync(path.dirname(local), { recursive: true });
+    fs.accessSync(path.dirname(local), fs.constants.W_OK);
+    return local;
+  } catch {
+    return '/tmp/boqore.db';
+  }
+}
+const dbPath = pickDbPath();
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 export const db = new Database(dbPath);
