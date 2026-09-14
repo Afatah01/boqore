@@ -6,14 +6,14 @@ import { fileURLToPath } from 'node:url';
 import { hashPw } from './lib.js';
 import { seedDemo } from './seed.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dbDir = path.dirname(fileURLToPath(import.meta.url));
 // Pick a writable database location:
 //  1. explicit BOQORE_DB_PATH env var (if set)
 //  2. the local data/ directory (normal server runs)
 //  3. /tmp (serverless runtimes where the app dir is read-only)
 function pickDbPath() {
   if (process.env.BOQORE_DB_PATH) return process.env.BOQORE_DB_PATH;
-  const local = path.join(__dirname, 'data', 'boqore.db');
+  const local = path.join(dbDir, 'data', 'boqore.db');
   try {
     fs.mkdirSync(path.dirname(local), { recursive: true });
     fs.accessSync(path.dirname(local), fs.constants.W_OK);

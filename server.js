@@ -6,12 +6,12 @@ import { db, getSetting, setSetting, seedIfEmpty, clearDemoData } from './db.js'
 import { todayEAT, daysAgoEAT, nowEATClock, monthPrefix, prevMonthPrefix, round, verifyPw, hashPw } from './lib.js';
 import { REPORT_TYPES, defaultPeriod, reportData, exportExcel, exportPdf } from './reports.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const serverDir = path.dirname(fileURLToPath(import.meta.url));
 seedIfEmpty();
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(serverDir, 'public')));
 
 // Keep-alive ping — client pings this while the app is open; each request
 // counts as sandbox activity and keeps the preview from sleeping.
@@ -625,7 +625,7 @@ app.post('/api/settings/clear-demo', requireRoles('admin'), (req, res) => {
 });
 
 // SPA fallback
-app.get(/^\/(?!api).*/, (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get(/^\/(?!api).*/, (req, res) => res.sendFile(path.join(serverDir, 'public', 'index.html')));
 
 // 404 for unknown API routes
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
