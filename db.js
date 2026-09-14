@@ -4,7 +4,6 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { hashPw } from './lib.js';
-import { seedDemo } from './seed.js';
 
 const dbDir = path.dirname(fileURLToPath(import.meta.url));
 // Pick a writable database location:
@@ -187,20 +186,7 @@ export function seedIfEmpty() {
     setSetting('recovery_target', '85');   // percent
     setSetting('market_source', 'Local Somaliland Market');
     setSetting('secret', crypto.randomBytes(32).toString('hex'));
-    setSetting('demo', '1');
-  }
-  const hasProd = db.prepare('SELECT COUNT(*) c FROM production').get().c > 0;
-  if (!hasProd && getSetting('demo') === '1') {
-    seedDemo();
   }
 }
 
-export function clearDemoData() {
-  const tx = db.transaction(() => {
-    for (const t of ['production','processing','gold_inventory','market_prices','alerts','reports','equipment','plant_stages','mining_sites']) {
-      db.prepare(`DELETE FROM ${t}`).run();
-    }
-  });
-  tx();
-  setSetting('demo', '0');
-}
+

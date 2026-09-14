@@ -93,13 +93,11 @@ export function reportData(type, period) {
 // ---------------- EXCEL ----------------
 export function exportExcel(type, period, user, res) {
   const d = reportData(type, period);
-  const demo = getSetting('demo') === '1';
   const aoa = [
     ['BOQORE GOLD TRADE'],
     ['Gold Production & Market Control'],
     [d.title + (d.periodLabel ? ' — ' + d.periodLabel : '')],
     ['Generated ' + new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC  ·  by ' + (user?.name || user?.username || 'system')],
-    demo ? ['DEMO DATA — sample records for design review, not real business data'] : [],
     [],
     d.head,
     ...d.body,
@@ -123,7 +121,7 @@ const GOLD = '#C9920E';
 const GRAY = '#6B7280';
 const LIGHT = '#F2F5FA';
 
-function drawHeader(doc, d, demo, user) {
+function drawHeader(doc, d, user) {
   // gold diamond mark
   doc.save();
   doc.fillColor(GOLD);
@@ -134,27 +132,22 @@ function drawHeader(doc, d, demo, user) {
   doc.moveTo(40, 82).lineTo(555, 82).strokeColor(GOLD).lineWidth(1.2).stroke();
   doc.font('Helvetica-Bold').fontSize(12).fillColor(NAVY).text(d.title + (d.periodLabel ? '   —   ' + d.periodLabel : ''), 40, 94);
   doc.font('Helvetica').fontSize(8.5).fillColor(GRAY)
-    .text('Generated ' + new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC   ·   by ' + (user?.name || user?.username || 'system'), 40, doc.y + 1);
-  if (demo) {
-    doc.font('Helvetica-Bold').fontSize(9).fillColor('#B45309').text('DEMO DATA — sample records for design review, not real business data.', 40, doc.y + 3);
-  }
+    .text('Generated ' + new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC   ·  by ' + (user?.name || user?.username || 'system'), 40, doc.y + 1);
   doc.y += 12;
 }
 
-function drawFooter(doc, demo) {
+function drawFooter(doc) {
   const range = doc.bufferedPageRange();
   for (let i = 0; i < range.count; i++) {
     doc.switchToPage(range.start + i);
     doc.font('Helvetica').fontSize(7.5).fillColor(GRAY);
     doc.text('BOQORE GOLD TRADE — Gold Production & Market Control', 40, 814, { align: 'left', lineBreak: false });
     doc.text(`Page ${i + 1} of ${range.count}`, 555, 814, { align: 'right', lineBreak: false });
-    if (demo) doc.fillColor(GOLD).font('Helvetica-Bold').text('DEMO DATA', 297, 814, { align: 'center', lineBreak: false });
   }
 }
 
 export function exportPdf(type, period, user, res) {
   const d = reportData(type, period);
-  const demo = getSetting('demo') === '1';
   const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
   const chunks = [];
   doc.on('data', (c) => chunks.push(c));
@@ -164,7 +157,7 @@ export function exportPdf(type, period, user, res) {
     res.send(Buffer.concat(chunks));
   });
 
-  drawHeader(doc, d, demo, user);
+  drawHeader(doc, d, user);
 
   const pageW = doc.page.width - 80;
   const x0 = 40;
@@ -216,6 +209,6 @@ export function exportPdf(type, period, user, res) {
     doc.font('Helvetica-Oblique').fontSize(9).fillColor(GRAY).text('No Data — no records found for this period.', x0, y + 8);
   }
 
-  drawFooter(doc, demo);
+  drawFooter(doc);
   doc.end();
 }

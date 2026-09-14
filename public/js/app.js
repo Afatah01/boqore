@@ -124,11 +124,8 @@ const NAV = [
 ];
 
 /* ---------------- Login ---------------- */
-async function showLogin(err) {
+function showLogin(err) {
   window.onhashchange = null;
-  // Demo helpers (one-tap login + hint) are only shown while demo mode is on.
-  const ping = await api('/api/ping').catch(() => null);
-  const isDemo = !!(ping && ping.demo);
   appEl.innerHTML = `
   <div class="login-wrap">
     <div class="login-card">
@@ -144,17 +141,13 @@ async function showLogin(err) {
           <input name="password" type="password" autocomplete="current-password" required>
         </label>
         <button class="btn primary" type="submit" style="margin-top:6px">Sign in</button>
-        ${isDemo ? `<button class="btn ghost" type="button" id="demoLogin">Use demo admin login</button>` : ''}
       </form>
-      ${isDemo ? `<div class="login-hint">Demo accounts: <b>admin</b> · <b>manager</b> · <b>operator</b> — password <b>boqore2026</b></div>` : ''}
       <div class="login-powered">Powered by <b>Abdifatah Elmi</b></div>
     </div>
   </div>`;
   const doLogin = async (u, p) => {
     const btn = document.querySelector('#loginForm .btn.primary');
-    const demoBtn = document.getElementById('demoLogin');
     if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
-    if (demoBtn) demoBtn.disabled = true;
     try {
       const r = await api('/api/auth/login', { method: 'POST', body: { username: u, password: p } });
       state.user = r.user;
@@ -170,8 +163,6 @@ async function showLogin(err) {
     const f = e.target;
     doLogin(f.username.value, f.password.value);
   });
-  const demoBtn = document.getElementById('demoLogin');
-  if (demoBtn) demoBtn.addEventListener('click', () => doLogin('admin', 'boqore2026'));
 }
 
 /* ---------------- App shell ---------------- */
@@ -223,12 +214,6 @@ function shell(pageTitle, crumb) {
           </div>
         </div>
       </header>
-      ${state.cfg?.demo ? `
-      <div class="demo-banner">
-        <span>⚠️</span>
-        <span><b>DEMO DATA</b> &nbsp;Sample records for design review — not real production or market values.</span>
-        ${can('admin') ? '<a href="#/settings">Clear in Settings →</a>' : ''}
-      </div>` : ''}
       <div id="page"></div>
       <footer class="app-foot">Powered by <b>Abdifatah Elmi</b></footer>
     </main>
@@ -759,7 +744,8 @@ function prodForm(prefill) {
     <form id="prodForm" class="form-grid">
       <div class="field"><label>Date *</label><input type="date" name="date" value="${prefill?.date || today()}" required></div>
       <div class="field"><label>Mining Site</label>
-        <select name="site_id">${P.sites.map((s) => `<option value="${s.id}" ${prefill?.site_id == s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
+        <select name="site_id">${P.sites.length === 0 ? '<option value="">— not added yet —</option>' : P.sites.map((s) => `<option value="${s.id}" ${prefill?.site_id == s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
+        ${P.sites.length === 0 ? '<span class="hint">You can still record without a site. To add one: Settings → Mining Site.</span>' : ''}
       </div>
       <div class="field"><label>Shift</label>
         <select name="shift"><option ${prefill?.shift === 'Day' ? 'selected' : ''}>Day</option><option ${prefill?.shift === 'Night' ? 'selected' : ''}>Night</option></select>
@@ -1382,7 +1368,6 @@ async function pageReports() {
     <div class="panel-foot" style="margin:6px 0">
       <span>📄 <b>PDF</b> — branded document, prints cleanly, downloads directly.</span>
       <span>📊 <b>Excel</b> — .xlsx file you can filter and re-use.</span>
-      ${state.cfg?.demo ? '<span class="gold">⚠️ DEMO DATA is currently active — reports will be stamped DEMO DATA.</span>' : ''}
     </div>
   </div>`;
 

@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { db, getSetting, setSetting, seedIfEmpty, clearDemoData } from './db.js';
+import { db, getSetting, setSetting, seedIfEmpty } from './db.js';
 import { todayEAT, daysAgoEAT, nowEATClock, monthPrefix, prevMonthPrefix, round, verifyPw, hashPw } from './lib.js';
 import { REPORT_TYPES, defaultPeriod, reportData, exportExcel, exportPdf } from './reports.js';
 
@@ -15,8 +15,7 @@ app.use(express.static(path.join(serverDir, 'public')));
 
 // Keep-alive ping — client pings this while the app is open; each request
 // counts as sandbox activity and keeps the preview from sleeping.
-// Also carries the demo flag so the login screen can hide demo helpers.
-app.get('/api/ping', (req, res) => res.json({ ok: true, t: Date.now(), demo: getSetting('demo') === '1' }));
+app.get('/api/ping', (req, res) => res.json({ ok: true, t: Date.now() }));
 
 const PORT = process.env.PORT || 3000;
 
@@ -97,7 +96,6 @@ app.get('/api/auth/me', (req, res) => {
 app.get('/api/state', requireUser, (req, res) => {
   res.json({
     user: req.user,
-    demo: getSetting('demo') === '1',
     company: getSetting('company'),
     tagline: getSetting('tagline'),
     currency: getSetting('currency'),
@@ -606,7 +604,6 @@ app.get('/api/settings', requireRoles('admin'), (req, res) => {
     monthly_target: getSetting('monthly_target'),
     recovery_target: getSetting('recovery_target'),
     market_source: getSetting('market_source'),
-    demo: getSetting('demo') === '1',
     sites: db.prepare('SELECT * FROM mining_sites ORDER BY name').all(),
     equipment: db.prepare('SELECT * FROM equipment ORDER BY sort_order').all(),
     users: db.prepare('SELECT id, username, name, role, active FROM users ORDER BY id').all(),
@@ -632,11 +629,6 @@ app.post('/api/settings', requireRoles('admin'), (req, res) => {
       db.prepare('INSERT INTO users(username, password_hash, name, role) VALUES(?,?,?,?)').run(b.user.username, hashPw(b.user.password), b.user.name || b.user.username, b.user.role || 'operator');
     }
   }
-  res.json({ ok: true });
-});
-
-app.post('/api/settings/clear-demo', requireRoles('admin'), (req, res) => {
-  clearDemoData();
   res.json({ ok: true });
 });
 
