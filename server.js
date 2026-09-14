@@ -17,6 +17,15 @@ app.use(express.static(path.join(serverDir, 'public')));
 // counts as sandbox activity and keeps the preview from sleeping.
 app.get('/api/ping', (req, res) => res.json({ ok: true, t: Date.now() }));
 
+// TEMP debug endpoint (removed after platform diagnosis)
+app.get('/api/debug', (req, res) => {
+  let glibc = 'unknown';
+  try {
+    glibc = String(require('node:child_process').execSync('ldd --version 2>/dev/null | head -1', { timeout: 2000 }));
+  } catch {}
+  res.json({ node: process.version, platform: process.platform, arch: process.arch, glibc: glibc.trim() });
+});
+
 const PORT = process.env.PORT || 3000;
 
 // ============================== AUTH ==============================
