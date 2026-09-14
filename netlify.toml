@@ -1,7 +1,3 @@
 [build]
   publish = "public"
   functions = "netlify/functions"
-
-[[functions]]
-  name = "api"
-  path = "/api/*"

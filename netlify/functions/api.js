@@ -1,9 +1,12 @@
 // Netlify Function wrapper — runs the Express app on a local socket and
 // forwards each incoming request to it. Zero extra dependencies.
 //
+// Routing: the 2026 Netlify runtime declares URL paths via the exported
+// `config` object (URLPattern syntax).
+//
 // Supports both Netlify event shapes:
+//  - web request: Request object with .url/.method/.headers (+ context.params)
 //  - legacy event: { httpMethod, path, rawQueryString, headers, body }
-//  - web request:  Request object with .url/.method/.headers
 import http from 'node:http';
 import app from '../../server.js';
 
@@ -47,10 +50,10 @@ function forward(server, { method, path, headers, body }) {
   });
 }
 
-export default async (event) => {
+export default async (event, context) => {
   const server = await getServer();
 
-  // Web Request shape (newer runtimes)
+  // Web Request shape (current runtime)
   if (event && typeof event.url === 'string' && typeof event.method === 'string' && event.headers) {
     const headers = {};
     event.headers.forEach((v, k) => (headers[k] = v));
@@ -60,7 +63,11 @@ export default async (event) => {
       if (raw) body = raw;
     }
     const u = new URL(event.url);
-    const res = await forward(server, { method: event.method, path: u.pathname + (u.search || ''), headers, body });
+    // Rebuild the original /api/... path (also covers runtimes that expose
+    // the matched wildcard via context.params.splat).
+    const splat = context && context.params && context.params.splat;
+    const path = splat ? `/api/${splat}` : u.pathname + (u.search || '');
+    const res = await forward(server, { method: event.method, path, headers, body });
     return new Response(res.body ? Buffer.from(res.body, 'base64') : null, {
       status: res.statusCode,
       headers: res.headers,
@@ -77,4 +84,8 @@ export default async (event) => {
     body,
   });
   return res;
+};
+
+export const config = {
+  path: ['/api/*'],
 };
