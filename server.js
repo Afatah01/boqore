@@ -15,7 +15,8 @@ app.use(express.static(path.join(serverDir, 'public')));
 
 // Keep-alive ping — client pings this while the app is open; each request
 // counts as sandbox activity and keeps the preview from sleeping.
-app.get('/api/ping', (req, res) => res.json({ ok: true, t: Date.now() }));
+// Also carries the demo flag so the login screen can hide demo helpers.
+app.get('/api/ping', (req, res) => res.json({ ok: true, t: Date.now(), demo: getSetting('demo') === '1' }));
 
 const PORT = process.env.PORT || 3000;
 

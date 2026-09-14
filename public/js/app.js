@@ -124,8 +124,11 @@ const NAV = [
 ];
 
 /* ---------------- Login ---------------- */
-function showLogin(err) {
+async function showLogin(err) {
   window.onhashchange = null;
+  // Demo helpers (one-tap login + hint) are only shown while demo mode is on.
+  const ping = await api('/api/ping').catch(() => null);
+  const isDemo = !!(ping && ping.demo);
   appEl.innerHTML = `
   <div class="login-wrap">
     <div class="login-card">
@@ -141,9 +144,9 @@ function showLogin(err) {
           <input name="password" type="password" autocomplete="current-password" required>
         </label>
         <button class="btn primary" type="submit" style="margin-top:6px">Sign in</button>
-        <button class="btn ghost" type="button" id="demoLogin">Use demo admin login</button>
+        ${isDemo ? `<button class="btn ghost" type="button" id="demoLogin">Use demo admin login</button>` : ''}
       </form>
-      <div class="login-hint">Demo accounts: <b>admin</b> · <b>manager</b> · <b>operator</b> — password <b>boqore2026</b></div>
+      ${isDemo ? `<div class="login-hint">Demo accounts: <b>admin</b> · <b>manager</b> · <b>operator</b> — password <b>boqore2026</b></div>` : ''}
     </div>
   </div>`;
   const doLogin = async (u, p) => {
@@ -166,7 +169,8 @@ function showLogin(err) {
     const f = e.target;
     doLogin(f.username.value, f.password.value);
   });
-  document.getElementById('demoLogin').addEventListener('click', () => doLogin('admin', 'boqore2026'));
+  const demoBtn = document.getElementById('demoLogin');
+  if (demoBtn) demoBtn.addEventListener('click', () => doLogin('admin', 'boqore2026'));
 }
 
 /* ---------------- App shell ---------------- */
