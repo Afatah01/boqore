@@ -7,9 +7,13 @@ import { hashPw } from './lib.js';
 import { seedDemo } from './seed.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+// On Netlify Functions the app directory is read-only — use /tmp instead.
+// Can be overridden with BOQORE_DB_PATH.
+const defaultDir = process.env.NETLIFY_FUNCTION ? '/tmp' : path.join(__dirname, 'data');
+const dbPath = process.env.BOQORE_DB_PATH || path.join(defaultDir, 'boqore.db');
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
-export const db = new Database(path.join(__dirname, 'data', 'boqore.db'));
+export const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
 export function ensureSchema() {

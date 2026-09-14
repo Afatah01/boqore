@@ -642,6 +642,14 @@ process.on('uncaughtException', (err) => {
   console.error('[uncaught]', err.message);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`BOQORE GOLD TRADE running on http://0.0.0.0:${PORT}`);
-});
+// Start the HTTP server only when run directly (`node server.js`).
+// When imported by the Netlify function wrapper, the request lifecycle is
+// handled by the platform instead.
+const isMain = process.argv[1] && process.argv[1] === fileURLToPath(import.meta.url);
+if (isMain) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`BOQORE GOLD TRADE running on http://0.0.0.0:${PORT}`);
+  });
+}
+
+export default app;
