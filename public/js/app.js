@@ -147,6 +147,7 @@ async function showLogin(err) {
         ${isDemo ? `<button class="btn ghost" type="button" id="demoLogin">Use demo admin login</button>` : ''}
       </form>
       ${isDemo ? `<div class="login-hint">Demo accounts: <b>admin</b> · <b>manager</b> · <b>operator</b> — password <b>boqore2026</b></div>` : ''}
+      <div class="login-powered">Powered by <b>Abdifatah Elmi</b></div>
     </div>
   </div>`;
   const doLogin = async (u, p) => {
@@ -229,6 +230,7 @@ function shell(pageTitle, crumb) {
         ${can('admin') ? '<a href="#/settings">Clear in Settings →</a>' : ''}
       </div>` : ''}
       <div id="page"></div>
+      <footer class="app-foot">Powered by <b>Abdifatah Elmi</b></footer>
     </main>
   </div>`;
   document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -956,6 +958,7 @@ async function pageEquipment() {
       <span><span class="dot attention" style="margin-right:6px"></span><b>${counts.attention || 0}</b> attention</span>
       <span><span class="dot stopped" style="margin-right:6px"></span><b>${counts.stopped || 0}</b> stopped</span>
       <span><span class="dot offline" style="margin-right:6px"></span><b>${counts.offline || 0}</b> offline</span>
+      ${can('admin') || can('manager') ? '<button class="btn sm" id="addEqBtn" style="margin-left:auto">+ ADD EQUIPMENT</button>' : ''}
     </div>
   </div>
   <div class="eq-grid">
@@ -985,8 +988,7 @@ async function pageEquipment() {
   </div>`;
 
   page.querySelectorAll('[data-eqview]').forEach((b) => b.addEventListener('click', () => {
-    const e = EQ.find((x) => x.id == b.dataset.eqview);
-    if (!e) return;
+    const e = EQ.find((x) => x.id == b.dataset.eqview);    if (!e) return;
     openModal(e.name, `
       <img class="eq-modal-img" src="${EQ_IMG[e.name] || ''}" alt="" onerror="this.style.display='none'">
       ${kvRows([
@@ -1012,6 +1014,29 @@ async function pageEquipment() {
       pageEquipment();
     } catch (err) { toast(err.message, false); }
   }));
+
+  const addEqBtn = document.getElementById('addEqBtn');
+  if (addEqBtn) addEqBtn.addEventListener('click', () => {
+    openModal('Add Equipment', `
+      <form id="addEqForm" class="form-grid">
+        <div class="field"><label>Name *</label><input name="name" required placeholder="e.g. Ball Mill 2"></div>
+        <div class="field"><label>Model</label><input name="model" placeholder="e.g. XM 270x360"></div>
+        <div class="field"><label>Capacity</label><input name="capacity" placeholder="e.g. 5 t/h"></div>
+        <div class="field"><label>Power</label><input name="power" placeholder="e.g. 30 kW"></div>
+        <div class="field"><label>Quantity</label><input name="qty" type="number" min="1" value="1"></div>
+        <div class="full"><button class="btn primary sm" type="submit">ADD EQUIPMENT</button></div>
+      </form>`);
+    document.getElementById('addEqForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const b = Object.fromEntries(new FormData(e.target).entries());
+      try {
+        await api('/api/equipment', { method: 'POST', body: b });
+        toast('Equipment added');
+        closeModal();
+        pageEquipment();
+      } catch (err) { toast(err.message, false); }
+    });
+  });
 }
 
 /* ============================================================
@@ -1511,13 +1536,6 @@ async function pageSettings() {
       <div class="hint" style="margin-top:10px">Status and runtime are managed on the <a href="#/equipment" class="gold">Equipment</a> page.</div>
     </div>
 
-    <div class="panel" ${s.demo ? 'style="border-color:rgba(240,180,41,.45)"' : ''}>
-      <div class="panel-head"><div class="panel-title">Demo Data</div></div>
-      ${s.demo
-        ? `<p class="muted" style="font-size:13px;margin-bottom:12px">The application currently contains <b class="gold">DEMO DATA</b> for design review. When you are ready to use real numbers, clear it — the app will start from zero and show “No Data” until you record real values.</p>
-           <button class="btn danger" id="clearDemo">CLEAR DEMO DATA</button>`
-        : '<p class="muted" style="font-size:13px">Demo data is <b>not</b> active. All values shown in the application are real recorded data.</p>'}
-    </div>
   </div>`;
 
   const saveSection = (formId, key, extra) => {
@@ -1586,16 +1604,6 @@ async function pageSettings() {
     } catch (err) { toast(err.message, false); }
   });
 
-  const cd = document.getElementById('clearDemo');
-  if (cd) cd.addEventListener('click', async () => {
-    if (!confirm('Clear ALL demo data? Production, market prices, gold batches and equipment records will be removed. This cannot be undone.')) return;
-    try {
-      await api('/api/settings/clear-demo', { method: 'POST' });
-      state.cfg.demo = false;
-      toast('Demo data cleared — the app now starts from real data (currently empty)');
-      pageSettings();
-    } catch (err) { toast(err.message, false); }
-  });
 }
 
 /* ============================================================

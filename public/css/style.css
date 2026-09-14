@@ -528,3 +528,21 @@ table.eq-specs td:last-child { text-align: right; font-weight: 600; }
   background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
   border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 10px;
 }
+
+/* ---- signature footer ---- */
+.app-foot {
+  margin-top: 28px;
+  padding: 14px 0 4px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: .4px;
+  color: rgba(148,163,184,.55);
+}
+.app-foot b, .login-powered b { color: rgba(240,180,41,.8); font-weight: 600; }
+.login-powered {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: .4px;
+  color: rgba(148,163,184,.55);
+}

@@ -409,6 +409,21 @@ app.get('/api/equipment', requireUser, (req, res) => {
   res.json({ rows });
 });
 
+app.post('/api/equipment', requireRoles('admin', 'manager'), (req, res) => {
+  const b = req.body || {};
+  const name = String(b.name || '').trim();
+  if (!name) return res.status(400).json({ error: 'name required' });
+  const dup = db.prepare('SELECT id FROM equipment WHERE name = ?').get(name);
+  if (dup) return res.status(400).json({ error: 'An equipment with that name already exists' });
+  const qty = Math.max(1, parseInt(b.qty, 10) || 1);
+  const extra = b.extra && typeof b.extra === 'object' ? JSON.stringify(b.extra) : null;
+  const so = db.prepare('SELECT COALESCE(MAX(sort_order),0)+1 n FROM equipment').get().n;
+  db.prepare(
+    'INSERT INTO equipment(name, model, capacity, power, qty, extra, status, sort_order) VALUES(?,?,?,?,?,?,?,?)'
+  ).run(name, String(b.model || '').trim(), String(b.capacity || '').trim(), String(b.power || '').trim(), qty, extra, 'offline', so);
+  res.json({ ok: true });
+});
+
 app.patch('/api/equipment/:id', requireRoles('admin', 'manager', 'operator'), (req, res) => {
   const { status, runtime_h, notes } = req.body || {};
   const prev = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
