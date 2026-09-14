@@ -187,6 +187,28 @@ export function seedIfEmpty() {
     setSetting('market_source', 'Local Somaliland Market');
     setSetting('secret', crypto.randomBytes(32).toString('hex'));
   }
+  // Default plant structure: the gravity separation workflow. These are the
+  // plant's real process stages (structure, not data) — seeded with honest
+  // "offline" status; the user switches a stage to running when it operates.
+  const hasStages = db.prepare('SELECT COUNT(*) c FROM plant_stages').get().c > 0;
+  if (!hasStages) {
+    const insStage = db.prepare(
+      'INSERT INTO plant_stages (name, position, status, feed, output, note) VALUES(?,?,?,?,?,?)'
+    );
+    const stages = [
+      ['Ore Feed', 1, 'offline', 'alluvial ore', 'to feeder', 'Ore supply'],
+      ['Vibrating Feeder', 2, 'offline', 'even feed', 'to jaw crusher', 'Even feed rate'],
+      ['Jaw Crusher', 3, 'offline', 'lumps', '≈ 25 mm', 'Primary crushing'],
+      ['Hammer Crusher', 4, 'offline', '≈ 25 mm', '0–10 mm', 'Secondary crushing'],
+      ['Belt Conveyor', 5, 'offline', 'crushed ore', 'to ball mill', 'Crusher to mill transfer'],
+      ['Ball Mill', 6, 'offline', '0–10 mm ore', 'slurry −325 mesh', 'Wet grinding'],
+      ['Gravity Concentrator', 7, 'offline', 'slurry', 'concentrate', 'Spiral / gravity concentration'],
+      ['Shaking Table', 8, 'offline', 'concentrate', 'high-grade mat', 'Final gravity separation'],
+      ['Gold Concentrate', 9, 'offline', 'concentrate', 'to batch record', 'Material stage — awaiting batch record'],
+      ['Recovered Gold', 10, 'offline', 'high-grade mat', 'to inventory', 'Material stage — to gold inventory'],
+    ];
+    for (const s of stages) insStage.run(...s);
+  }
 }
 
 
