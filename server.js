@@ -422,6 +422,12 @@ app.post('/api/equipment', requireRoles('admin', 'manager'), (req, res) => {
   res.json({ ok: true });
 });
 
+app.delete('/api/equipment/:id', requireRoles('admin'), (req, res) => {
+  const info = db.prepare('DELETE FROM equipment WHERE id = ?').run(Number(req.params.id));
+  if (info.changes === 0) return res.status(404).json({ error: 'Equipment not found' });
+  res.json({ ok: true });
+});
+
 app.patch('/api/equipment/:id', requireRoles('admin', 'manager', 'operator'), (req, res) => {
   const { status, runtime_h, notes } = req.body || {};
   const prev = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
