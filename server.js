@@ -386,6 +386,12 @@ app.put('/api/production/:id', requireRoles('admin', 'manager', 'operator'), (re
   res.json({ ok: true });
 });
 
+app.delete('/api/production/:id', requireRoles('admin', 'manager'), (req, res) => {
+  const info = db.prepare('DELETE FROM production WHERE id = ?').run(Number(req.params.id));
+  if (info.changes === 0) return res.status(404).json({ error: 'Record not found' });
+  res.json({ ok: true });
+});
+
 // ============================== PLANT (processing stages) ==============================
 app.get('/api/plant', requireUser, (req, res) => {
   const stages = db.prepare('SELECT * FROM plant_stages ORDER BY position').all();
@@ -493,6 +499,12 @@ app.patch('/api/gold/:id', requireRoles('admin', 'manager'), (req, res) => {
   res.json({ ok: true });
 });
 
+app.delete('/api/gold/:id', requireRoles('admin', 'manager'), (req, res) => {
+  const info = db.prepare('DELETE FROM gold_inventory WHERE id = ?').run(Number(req.params.id));
+  if (info.changes === 0) return res.status(404).json({ error: 'Batch not found' });
+  res.json({ ok: true });
+});
+
 // ============================== MARKET (external Somaliland prices) ==============================
 app.get('/api/market', requireRoles('admin', 'manager'), (req, res) => {
   const range = Number(req.query.range || 30);
@@ -517,7 +529,7 @@ app.get('/api/market', requireRoles('admin', 'manager'), (req, res) => {
     if (r.karat === 22) byDate.set(r.date, r);
   }
   const days = lastNDays(range);
-  const series = days.map((d) => (byDate.has(d) ? { date: d, price_sos: byDate.get(d).price_sos } : { date: d, price_sos: null }));
+  const series = days.map((d) => (byDate.has(d) ? { id: byDate.get(d).id, date: d, price_sos: byDate.get(d).price_sos } : { date: d, price_sos: null }));
   const vals = series.filter((s) => s.price_sos != null).map((s) => s.price_sos);
   const stats = vals.length
     ? {
@@ -548,6 +560,12 @@ app.post('/api/market', requireRoles('admin'), (req, res) => {
     'manual',
     req.user.username
   );
+  res.json({ ok: true });
+});
+
+app.delete('/api/market/:id', requireRoles('admin'), (req, res) => {
+  const info = db.prepare('DELETE FROM market_prices WHERE id = ?').run(Number(req.params.id));
+  if (info.changes === 0) return res.status(404).json({ error: 'Price record not found' });
   res.json({ ok: true });
 });
 
@@ -635,6 +653,12 @@ app.post('/api/settings', requireRoles('admin'), (req, res) => {
       db.prepare('INSERT INTO users(username, password_hash, name, role) VALUES(?,?,?,?)').run(b.user.username, hashPw(b.user.password), b.user.name || b.user.username, b.user.role || 'operator');
     }
   }
+  res.json({ ok: true });
+});
+
+app.delete('/api/settings/site/:id', requireRoles('admin'), (req, res) => {
+  const info = db.prepare('DELETE FROM mining_sites WHERE id = ?').run(Number(req.params.id));
+  if (info.changes === 0) return res.status(404).json({ error: 'Site not found' });
   res.json({ ok: true });
 });
 

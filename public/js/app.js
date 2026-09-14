@@ -636,6 +636,7 @@ async function pageProduction() {
                 <td class="num">
                   <button class="btn ghost sm" data-view="${r.id}">View</button>
                   ${can('admin', 'manager', 'operator') ? `<button class="btn ghost sm" data-edit="${r.id}">Edit</button>` : ''}
+                  ${can('admin', 'manager') ? `<button class="btn ghost sm" data-del="${r.id}" title="Delete">✕</button>` : ''}
                 </td>
               </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:22px" class="muted">No Data</td></tr>'}
           </tbody>
@@ -664,6 +665,11 @@ async function pageProduction() {
     if (addBtn) addBtn.addEventListener('click', () => prodForm());
     page.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => prodView(P.rows.find((r) => r.id == b.dataset.view))));
     page.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => prodForm(P.rows.find((r) => r.id == b.dataset.edit))));
+    page.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
+      if (!confirm('Delete this production record?')) return;
+      try { await api('/api/production/' + b.dataset.del, { method: 'DELETE' }); toast('Record deleted'); P.rows = (await api('/api/production')).rows; pageProduction(); }
+      catch (e) { toast(e.message, false); }
+    }));
   };
 
   function drawProdChart() {
@@ -1074,7 +1080,7 @@ async function pageGold() {
               <td class="num">${b.purity_pct !== null ? nf(b.purity_pct, 1) : '—'}</td>
               <td>${statusBadge(b.status)}</td>
               <td>${b.status === 'Sold' ? `<span class="muted">${dateShort(b.sold_date)}</span> · <span class="gold">${b.sold_price_sos ? nf(b.sold_price_sos, 0) + ' SOS' : 'recorded'}</span>` : '—'}</td>
-              <td class="num">${can('admin', 'manager') && b.status !== 'Sold' ? `<button class="btn ghost sm" data-sell="${b.id}">Mark Sold</button>` : ''}</td>
+              <td class="num">${can('admin', 'manager') && b.status !== 'Sold' ? `<button class="btn ghost sm" data-sell="${b.id}">Mark Sold</button>` : ''}${can('admin', 'manager') ? ` <button class="btn ghost sm" data-gdel="${b.id}" title="Delete">✕</button>` : ''}</td>
             </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:22px" class="muted">No Data</td></tr>'}
         </tbody>
       </table>
@@ -1083,6 +1089,11 @@ async function pageGold() {
 
   document.getElementById('addBatchBtn')?.addEventListener('click', () => batchForm());
   page.querySelectorAll('[data-sell]').forEach((b) => b.addEventListener('click', () => sellForm(GD.batches.find((x) => x.id == b.dataset.sell))));
+  page.querySelectorAll('[data-gdel]').forEach((b) => b.addEventListener('click', async () => {
+    if (!confirm('Delete this gold batch?')) return;
+    try { await api('/api/gold/' + b.dataset.gdel, { method: 'DELETE' }); toast('Batch deleted'); pageGold(); }
+    catch (e) { toast(e.message, false); }
+  }));
 }
 
 function nextBatchNo() {
@@ -1263,8 +1274,13 @@ async function pageMarket() {
     // history table (from series + latest)
     const hist = d.series.filter((s) => s.price_sos != null).slice(-30).reverse();
     document.getElementById('mktHist').innerHTML = hist.length
-      ? hist.map((s) => `<tr><td>${dateShort(s.date)}</td><td>—</td><td>22K</td><td class="num"><b>${nf(s.price_sos)}</b></td><td class="num">${k22 ? nf(k22.price_usd, 2) : '—'}</td><td>${esc(d.source)}</td><td><span class="badge idle">Manual</span></td></tr>`).join('')
+      ? hist.map((s) => `<tr><td>${dateShort(s.date)}</td><td>—</td><td>22K</td><td class="num"><b>${nf(s.price_sos)}</b></td><td class="num">${k22 ? nf(k22.price_usd, 2) : '—'}</td><td>${esc(d.source)}</td><td><span class="badge idle">Manual</span>${can('admin') && s.id ? ` <button class="btn ghost sm" data-mdel="${s.id}" title="Delete">✕</button>` : ''}</td></tr>`).join('')
       : '<tr><td colspan="7" style="text-align:center;padding:22px" class="muted">Market price unavailable</td></tr>';
+    document.getElementById('mktHist').querySelectorAll('[data-mdel]').forEach((b) => b.addEventListener('click', async () => {
+      if (!confirm('Delete this price record?')) return;
+      try { await api('/api/market/' + b.dataset.mdel, { method: 'DELETE' }); toast('Price record deleted'); pageMarket(); }
+      catch (e) { toast(e.message, false); }
+    }));
 
     // chart
     const ctx = document.getElementById('mktPageChart');
@@ -1458,7 +1474,7 @@ async function pageSettings() {
         <table class="tbl">
           <thead><tr><th>Site</th><th>Location</th><th>Status</th><th></th></tr></thead>
           <tbody id="siteRows">
-            ${s.sites.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(x.location || '—')}</td><td><span class="badge ${x.status === 'Active' ? 'running' : 'offline'}">${esc(x.status)}</span></td><td class="num"><button class="btn ghost sm" data-site="${x.id}">Edit</button></td></tr>`).join('')}
+            ${s.sites.map((x) => `<tr><td>${esc(x.name)}</td><td>${esc(x.location || '—')}</td><td><span class="badge ${x.status === 'Active' ? 'running' : 'offline'}">${esc(x.status)}</span></td><td class="num"><button class="btn ghost sm" data-site="${x.id}">Edit</button> <button class="btn ghost sm" data-sitedel="${x.id}" title="Delete">✕</button></td></tr>`).join('')}
           </tbody>
         </table>
       </div>
@@ -1562,6 +1578,11 @@ async function pageSettings() {
       pageSettings();
     } catch (err) { toast(err.message, false); }
   });
+  page.querySelectorAll('[data-sitedel]').forEach((btn) => btn.addEventListener('click', async () => {
+    if (!confirm('Delete this mining site?')) return;
+    try { await api('/api/settings/site/' + btn.dataset.sitedel, { method: 'DELETE' }); toast('Site deleted'); pageSettings(); }
+    catch (e) { toast(e.message, false); }
+  }));
   page.querySelectorAll('[data-site]').forEach((btn) => btn.addEventListener('click', () => {
     const x = s.sites.find((v) => v.id == btn.dataset.site);
     const f = document.getElementById('siteForm');
